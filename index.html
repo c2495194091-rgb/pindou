@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>拼豆补货单</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="拼豆补货">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1a2028" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<style>
+/* Layout: sticky summary bar over a filterable checklist of colour codes, one row per code */
+:root{
+  --bg:#f4f6f8; --surface:#ffffff; --line:#dfe4ea; --fg:#18202a; --muted:#5f6b78;
+  --accent:#2457c5; --accent-soft:#e6edfb; --hot:#b55d00; --hot-soft:#fff1de; --bar:#c9d6ee;
+  --sans:-apple-system,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono","SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12161c; --surface:#1a2028; --line:#2c3440; --fg:#e8edf3; --muted:#9aa6b4;
+  --accent:#7ea4f5; --accent-soft:#1f2c47; --hot:#f2a654; --hot-soft:#3a2a16; --bar:#2c3d5e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12161c; --surface:#1a2028; --line:#2c3440; --fg:#e8edf3; --muted:#9aa6b4;
+  --accent:#7ea4f5; --accent-soft:#1f2c47; --hot:#f2a654; --hot-soft:#3a2a16; --bar:#2c3d5e; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;padding-bottom:env(safe-area-inset-bottom,0px);-webkit-tap-highlight-color:transparent;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.wrap{max-width:760px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+header .wrap{padding-block:14px;display:flex;flex-direction:column;gap:12px}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-size:20px;font-weight:700;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:13px;margin:2px 0 0}
+.sum{display:flex;gap:18px;font-variant-numeric:tabular-nums}
+.sum div{display:flex;flex-direction:column;align-items:flex-end}
+.sum b{font-family:var(--mono);font-size:22px;line-height:1.1}
+.sum span{font-size:12px;color:var(--muted)}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:7px 12px;font-size:14px}
+button:hover{border-color:var(--accent)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--surface);font-weight:500}
+.tools{display:flex;flex-direction:column;gap:10px;padding-block:14px}
+.row1{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+input[type=search]{font:inherit;flex:1 1 160px;min-width:0;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;border-radius:0;padding:7px 11px}
+.seg button[aria-pressed=true]{background:var(--accent-soft);color:var(--accent);font-weight:500}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-family:var(--mono);font-size:13px;padding:4px 10px;border-radius:999px}
+.chip[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.legend{font-size:12px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap}
+.list{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:32px}
+.item{display:grid;grid-template-columns:28px 64px minmax(0,1fr) 118px;align-items:center;gap:10px;padding:8px 12px;border-top:1px solid var(--line);cursor:pointer}
+.item:first-child{border-top:0}
+.item.on{background:var(--accent-soft)}
+.item input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent);cursor:pointer;margin:0}
+.code{font-family:var(--mono);font-weight:700;font-size:15px}
+.sales{display:flex;align-items:center;gap:8px;min-width:0}
+.barbox{display:block;flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden;min-width:20px}
+.bar{display:block;height:100%;background:var(--bar)}
+.item.hot .bar{background:var(--hot)}
+.num{font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;width:44px;text-align:right;color:var(--muted)}
+.item.hot .num{color:var(--hot);font-weight:700}
+.tag{font-size:11px;padding:1px 6px;border-radius:4px;background:var(--hot-soft);color:var(--hot);white-space:nowrap}
+.step{display:flex;align-items:center;justify-content:flex-end;gap:4px}
+.step button{width:30px;height:30px;padding:0;font-size:17px;line-height:1}
+.step input{width:40px;height:30px;text-align:center;font-family:var(--mono);font-size:15px;font-weight:700;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--fg)}
+.step[hidden]{display:none!important}
+.off{font-size:12px;color:var(--muted);text-align:right}
+.empty{padding:28px 12px;text-align:center;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 16px;border-radius:8px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+textarea#fallback{width:100%;min-height:120px;font-family:var(--mono);font-size:13px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--fg);padding:8px}
+@media (max-width:480px){
+  .item{grid-template-columns:24px 52px minmax(0,1fr) 108px;gap:8px;padding:8px 10px}
+  .step button{width:28px}
+  .step input{width:34px}
+}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="top">
+    <div>
+      <h1>拼豆补货单</h1>
+      <p class="sub">数据：2026-09-22 至 2026-10-21 · 286 个色号</p>
+    </div>
+    <div class="sum">
+      <div><b id="sCodes">0</b><span>已选色号</span></div>
+      <div><b id="sPacks">0</b><span>补货包数</span></div>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="primary" id="copyBtn" type="button">复制补货单</button>
+    <button id="hotBtn" type="button">勾选 120 件以上</button>
+    <button id="clearBtn" type="button">清空</button>
+  </div>
+  <div id="confirmBox" class="actions" hidden>
+    <span style="align-self:center;font-size:14px">确定清空全部勾选？</span>
+    <button id="clearYes" type="button">清空</button>
+    <button id="clearNo" type="button">取消</button>
+  </div>
+  <textarea id="fallback" hidden readonly aria-label="补货单文本"></textarea>
+</div></header>
+
+<main class="wrap">
+  <div class="tools">
+    <div class="row1">
+      <input type="search" id="q" placeholder="搜索色号，如 H6" autocomplete="off">
+      <div class="seg" role="group" aria-label="筛选">
+        <button type="button" data-f="all" aria-pressed="true">全部</button>
+        <button type="button" data-f="hot" aria-pressed="false">120件以上</button>
+        <button type="button" data-f="on" aria-pressed="false">已勾选</button>
+      </div>
+      <div class="seg" role="group" aria-label="排序">
+        <button type="button" data-s="sales" aria-pressed="true">按销量</button>
+        <button type="button" data-s="code" aria-pressed="false">按色号</button>
+      </div>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="legend"><span>勾选后默认数量：支付件数 ≥120 为 2 包，其他 1 包，可用 − / + 修改</span></div>
+  </div>
+  <div class="list" id="list"></div>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+const DATA=[["X12",1],["G8",1],["X01",1],["H6",1],["H5",1],["H16",1],["G14",1],["F15",1],["F11",1],["H2",1],["F5",1],["F8",1],["A1",1],["H3",1],["E16",1],["M12",1],["H7",1],["F22",1],["G7",1],["F10",1],["H4",1],["H21",1],["G4",1],["E8",1],["C24",1],["E15",1],["H12",1],["A4",1],["A21",1],["F14",1],["E1",1],["H11",1],["C13",1],["G1",1],["G17",1],["C3",1],["F6",1],["G21",1],["C6",1],["H19",1],["E4",1],["A6",1],["E14",1],["G20",1],["G5",1],["G18",1],["A26",1],["E11",1],["A17",0],["E12",0],["F7",0],["G12",0],["E17",0],["H1",0],["F20",0],["A7",0],["E2",0],["G13",0],["H22",0],["G16",0],["G3",0],["A11",0],["A16",0],["H18",0],["A5",0],["C16",0],["A22",0],["B11",0],["M9",0],["E18",0],["M15",0],["C20",0],["D10",0],["F19",0],["C27",0],["E21",0],["H13",0],["M8",0],["F9",0],["H9",0],["G15",0],["F24",0],["H14",0],["A2",0],["M7",0],["E3",0],["F21",0],["A10",0],["C7",0],["C12",0],["H17",0],["F18",0],["F4",0],["G10",0],["F16",0],["A8",0],["B8",0],["G9",0],["M4",0],["C4",0],["C21",0],["E5",0],["C29",0],["D4",0],["H20",0],["A20",0],["C14",0],["F3",0],["F13",0],["A3",0],["C22",0],["A23",0],["A25",0],["B10",0],["B17",0],["B23",0],["G19",0],["C8",0],["H10",0],["C2",0],["M13",0],["C5",0],["G11",0],["B25",0],["F25",0],["M3",0],["P1",0],["E24",0],["G6",0],["G2",0],["A19",0],["D16",0],["B5",0],["B32",0],["E19",0],["D9",0],["M10",0],["C25",0],["D7",0],["B9",0],["C28",0],["H8",0],["A12",0],["D6",0],["A18",0],["D3",0],["C23",0],["D8",0],["D11",0],["M14",0],["B13",0],["H15",0],["M2",0],["A13",0],["C1",0],["D2",0],["D23",0],["R27",0],["E23",0],["F17",0],["R11",0],["B15",0],["C19",0],["A24",0],["C18",0],["D17",0],["E20",0],["B27",0],["E22",0],["R14",0],["B20",0],["B29",0],["A14",0],["B4",0],["F23",0],["M11",0],["B14",0],["B26",0],["C26",0],["E10",0],["M6",0],["B6",0],["B30",0],["C17",0],["D19",0],["B24",0],["D1",0],["M5",0],["R17",0],["A15",0],["B16",0],["C11",0],["D12",0],["E9",0],["D15",0],["H23",0],["M1",0],["B12",0],["B22",0],["D24",0],["A9",0],["B2",0],["B31",0],["E6",0],["B19",0],["B21",0],["C15",0],["D18",0],["D22",0],["F1",0],["D26",0],["X4",0],["R15",0],["D14",0],["B28",0],["C10",0],["E7",0],["P20",0],["R1",0],["B18",0],["C9",0],["F2",0],["X3",0],["B3",0],["D5",0],["D20",0],["R20",0],["R25",0],["D25",0],["F12",0],["R10",0],["B1",0],["P19",0],["R18",0],["R24",0],["B7",0],["P16",0],["R26",0],["R28",0],["X7",0],["R23",0],["D13",0],["P12",0],["R16",0],["R22",0],["X5",0],["E13",0],["X6",0],["X9",0],["P9",0],["P10",0],["P17",0],["R21",0],["X2",0],["P2",0],["P13",0],["R19",0],["X8",0],["D21",0],["R12",0],["R13",0],["X13",0],["X14",0],["R8",0],["P11",0],["P14",0],["P18",0],["R2",0],["R5",0],["R7",0],["P22",0],["P4",0],["P5",0],["P8",0],["P23",0],["R3",0],["X10",0],["P7",0],["P15",0],["P21",0],["R4",0],["R6",0],["R9",0],["P3",0],["X11",0],["P6",0]];
+const RANK=Object.fromEntries(DATA.map((d,i)=>[d[0],i]));
+const KEY='pindou-restock-v1';
+const series=c=>c.match(/^[A-Z]+/)[0];
+const codeKey=c=>{const m=c.match(/^([A-Z]+)(\d+)$/);return [m[1],+m[2]]};
+const cmpCode=(a,b)=>{const x=codeKey(a),y=codeKey(b);return x[0]<y[0]?-1:x[0]>y[0]?1:x[1]-y[1]};
+const def=h=>h?2:1;
+let sel={};
+try{const s=JSON.parse(localStorage.getItem(KEY)||'{}');if(s&&typeof s==='object')sel=s}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(sel))}catch(e){}};
+let filter='all', sort='sales', ser='全部', q='';
+const SERIES=['全部',...[...new Set(DATA.map(d=>series(d[0])))].sort()];
+const chips=document.getElementById('chips');
+chips.innerHTML=SERIES.map(s=>`<button type="button" class="chip" data-ser="${s}" aria-pressed="${s==='全部'}">${s==='X'?'X 高透':s}</button>`).join('');
+const list=document.getElementById('list');
+
+function render(){
+  let rows=DATA.filter(([c,n])=>
+    (ser==='全部'||series(c)===ser)&&
+    (!q||c.includes(q))&&
+    (filter==='all'||(filter==='hot'&&n)||(filter==='on'&&sel[c])));
+  rows=rows.slice().sort(sort==='sales'?(a,b)=>RANK[a[0]]-RANK[b[0]]:(a,b)=>cmpCode(a[0],b[0]));
+  if(!rows.length){list.innerHTML=`<div class="empty">${filter==='on'?'还没有勾选色号，点任意一行即可勾选':'没有符合条件的色号'}</div>`;summary();return}
+  list.innerHTML=rows.map(([c,n])=>{
+    const on=!!sel[c],hot=!!n;
+    return `<div class="item${on?' on':''}${hot?' hot':''}" data-c="${c}">
+      <input type="checkbox" id="cb-${c}" ${on?'checked':''} aria-label="勾选 ${c}">
+      <span class="code">${c}</span>
+      <span class="sales">${hot?'<span class="tag">热销</span>':''}</span>
+      ${on?`<span class="step"><button type="button" data-d="-1" aria-label="减少">−</button><input id="qty-${c}" inputmode="numeric" value="${sel[c]}" aria-label="${c} 补货数量"><button type="button" data-d="1" aria-label="增加">+</button></span>`:`<span class="off">默认 ${def(n)} 包</span>`}
+    </div>`}).join('');
+  summary();
+}
+function summary(){
+  const v=Object.values(sel);
+  document.getElementById('sCodes').textContent=v.length;
+  document.getElementById('sPacks').textContent=v.reduce((a,b)=>a+b,0);
+}
+const salesOf=Object.fromEntries(DATA);
+function toggle(c){
+  if(sel[c])delete sel[c];else sel[c]=def(salesOf[c]);
+  save();render();
+}
+list.addEventListener('click',e=>{
+  const item=e.target.closest('.item');if(!item)return;
+  const c=item.dataset.c;
+  const b=e.target.closest('button[data-d]');
+  if(b){sel[c]=Math.min(99,Math.max(1,(sel[c]||1)+ +b.dataset.d));save();item.querySelector('.step input').value=sel[c];summary();return}
+  if(e.target.closest('.step'))return;
+  if(e.target.matches('input[type=checkbox]')){e.preventDefault()}
+  toggle(c);
+});
+list.addEventListener('change',e=>{
+  if(!e.target.matches('.step input'))return;
+  const c=e.target.closest('.item').dataset.c;
+  let v=parseInt(e.target.value,10);if(!(v>=1))v=1;if(v>99)v=99;
+  sel[c]=v;e.target.value=v;save();summary();
+});
+document.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{filter=b.dataset.f;document.querySelectorAll('[data-f]').forEach(x=>x.setAttribute('aria-pressed',x===b));render()});
+document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{sort=b.dataset.s;document.querySelectorAll('[data-s]').forEach(x=>x.setAttribute('aria-pressed',x===b));render()});
+chips.addEventListener('click',e=>{const b=e.target.closest('[data-ser]');if(!b)return;ser=b.dataset.ser;chips.querySelectorAll('[data-ser]').forEach(x=>x.setAttribute('aria-pressed',x===b));render()});
+document.getElementById('q').addEventListener('input',e=>{q=e.target.value.trim().toUpperCase();render()});
+const toastEl=document.getElementById('toast');let tt;
+function toast(t){toastEl.textContent=t;toastEl.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>toastEl.classList.remove('show'),1800)}
+document.getElementById('hotBtn').onclick=()=>{let k=0;DATA.forEach(([c,n])=>{if(n&&!sel[c]){sel[c]=2;k++}});save();render();toast(k?`已勾选 ${k} 个热销色号`:'120 件以上的都已勾选')};
+const box=document.getElementById('confirmBox');
+document.getElementById('clearBtn').onclick=()=>{if(!Object.keys(sel).length){toast('还没有勾选');return}box.hidden=false};
+document.getElementById('clearNo').onclick=()=>box.hidden=true;
+document.getElementById('clearYes').onclick=()=>{sel={};save();box.hidden=true;render();toast('已清空')};
+function listText(){
+  const codes=Object.keys(sel).sort(cmpCode);
+  const qtys=[...new Set(codes.map(c=>sel[c]))].sort((a,b)=>a-b);
+  return qtys.map(n=>{
+    const lines=[];let prev='';
+    codes.filter(c=>sel[c]===n).forEach(c=>{const [s,d]=codeKey(c);if(s===prev)lines[lines.length-1].push(String(d));else{lines.push([c]);prev=s}});
+    return lines.map(l=>l.join(' ')).join('\n')+' *'+n;
+  }).join('\n\n\n\n');
+}
+document.getElementById('copyBtn').onclick=()=>{
+  if(!Object.keys(sel).length){toast('先勾选要补货的色号');return}
+  const t=listText(),fb=document.getElementById('fallback');
+  const showFb=()=>{fb.value=t;fb.hidden=false;fb.focus();fb.select();toast('复制不可用，已选中文本，请手动复制')};
+  try{navigator.clipboard.writeText(t).then(()=>{fb.hidden=true;toast('补货单已复制')},showFb)}catch(e){showFb()}
+};
+render();
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(()=>{})})}
+</script>
+
+</body>
+</html>
